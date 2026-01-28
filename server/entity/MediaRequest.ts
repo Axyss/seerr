@@ -58,8 +58,7 @@ export class MediaRequest {
     if (
       requestBody.userId &&
       !requestUser.hasPermission([
-        Permission.MANAGE_USERS,
-        Permission.MANAGE_REQUESTS,
+        Permission.REQUEST_ADVANCED,
       ])
     ) {
       throw new RequestPermissionError(
