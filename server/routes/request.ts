@@ -466,8 +466,7 @@ requestRoutes.put<{ requestId: string }>(
         req.body.userId &&
         req.body.userId !== request.requestedBy.id &&
         !req.user?.hasPermission([
-          Permission.MANAGE_USERS,
-          Permission.MANAGE_REQUESTS,
+          Permission.REQUEST_ADVANCED,
         ])
       ) {
         return next({
