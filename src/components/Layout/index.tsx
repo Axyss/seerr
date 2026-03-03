@@ -3,11 +3,11 @@ import PullToRefresh from '@app/components/Layout/PullToRefresh';
 import SearchInput from '@app/components/Layout/SearchInput';
 import Sidebar from '@app/components/Layout/Sidebar';
 import UserDropdown from '@app/components/Layout/UserDropdown';
-import type { AvailableLocale } from '@app/context/LanguageContext';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import { ArrowLeftIcon, Bars3BottomLeftIcon } from '@heroicons/react/24/solid';
+import type { AvailableLocale } from '@server/types/languages';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
@@ -88,15 +88,15 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="relative mb-16 flex w-0 min-w-0 flex-1 flex-col lg:ml-64">
         <PullToRefresh />
         <div
-          className={`searchbar fixed left-0 right-0 top-0 z-10 flex flex-shrink-0 bg-opacity-80 transition duration-300 ${
-            isScrolled ? 'bg-gray-700' : 'bg-transparent'
+          className={`searchbar fixed left-0 right-0 top-0 z-10 flex flex-shrink-0 transition duration-300 ${
+            isScrolled ? 'bg-gray-700/80' : 'bg-transparent'
           } lg:left-64`}
           style={{
             backdropFilter: isScrolled ? 'blur(5px)' : undefined,
             WebkitBackdropFilter: isScrolled ? 'blur(5px)' : undefined,
           }}
         >
-          <div className="flex flex-1 items-center justify-between px-4 md:pr-4 md:pl-4">
+          <div className="flex flex-1 items-center justify-between px-4 md:pl-4 md:pr-4">
             <button
               className={`mr-2 hidden text-white sm:block ${
                 isScrolled ? 'opacity-90' : 'opacity-70'

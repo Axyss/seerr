@@ -28,7 +28,9 @@ import discoverSettingRoutes from '@server/routes/settings/discover';
 import { ApiError } from '@server/types/error';
 import { appDataPath } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
+import { dnsCache } from '@server/utils/dnsCache';
 import { getHostname } from '@server/utils/getHostname';
+import type { DnsEntries, DnsStats } from 'dns-caching';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs';
@@ -37,6 +39,7 @@ import { rescheduleJob } from 'node-schedule';
 import path from 'path';
 import semver from 'semver';
 import { URL } from 'url';
+import metadataRoutes from './metadata';
 import notificationRoutes from './notifications';
 import radarrRoutes from './radarr';
 import sonarrRoutes from './sonarr';
@@ -47,6 +50,7 @@ settingsRoutes.use('/notifications', notificationRoutes);
 settingsRoutes.use('/radarr', radarrRoutes);
 settingsRoutes.use('/sonarr', sonarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
+settingsRoutes.use('/metadatas', metadataRoutes);
 
 const filteredMainSettings = (
   user: User,
@@ -490,13 +494,16 @@ settingsRoutes.get(
         thumb: string;
       }[] = [];
 
+      const plexIds = plexUsers.map((plexUser) => plexUser.id);
+      const plexEmails = plexUsers.map((plexUser) =>
+        plexUser.email.toLowerCase()
+      );
+      if (!plexIds.length) plexIds.push('-1');
+      if (!plexEmails.length) plexEmails.push('@');
+
       const existingUsers = await qb
-        .where('user.plexId IN (:...plexIds)', {
-          plexIds: plexUsers.map((plexUser) => plexUser.id),
-        })
-        .orWhere('user.email IN (:...plexEmails)', {
-          plexEmails: plexUsers.map((plexUser) => plexUser.email.toLowerCase()),
-        })
+        .where('user.plexId IN (:...plexIds)', { plexIds })
+        .orWhere('user.email IN (:...plexEmails)', { plexEmails })
         .getMany();
 
       await Promise.all(
@@ -755,11 +762,18 @@ settingsRoutes.get('/cache', async (_req, res) => {
   const tmdbImageCache = await ImageProxy.getImageStats('tmdb');
   const avatarImageCache = await ImageProxy.getImageStats('avatar');
 
+  const stats: DnsStats | undefined = dnsCache?.getStats();
+  const entries: DnsEntries | undefined = dnsCache?.getCacheEntries();
+
   return res.status(200).json({
     apiCaches,
     imageCache: {
       tmdb: tmdbImageCache,
       avatar: avatarImageCache,
+    },
+    dnsCache: {
+      stats,
+      entries,
     },
   });
 });
@@ -771,6 +785,20 @@ settingsRoutes.post<{ cacheId: AvailableCacheIds }>(
 
     if (cache) {
       cache.flush();
+      return res.status(204).send();
+    }
+
+    next({ status: 404, message: 'Cache not found.' });
+  }
+);
+
+settingsRoutes.post<{ dnsEntry: string }>(
+  '/cache/dns/:dnsEntry/flush',
+  (req, res, next) => {
+    const dnsEntry = req.params.dnsEntry;
+
+    if (dnsCache) {
+      dnsCache.clear(dnsEntry);
       return res.status(204).send();
     }
 
