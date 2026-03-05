@@ -58,10 +58,7 @@ export class MediaRequest {
 
     if (
       requestBody.userId &&
-      !requestUser.hasPermission([
-        Permission.MANAGE_USERS,
-        Permission.MANAGE_REQUESTS,
-      ])
+      !requestUser.hasPermission([Permission.REQUEST_ADVANCED])
     ) {
       throw new RequestPermissionError(
         'You do not have permission to modify the request user.'
